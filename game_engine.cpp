@@ -3,56 +3,58 @@
 using namespace std;
 using namespace std::chrono;
 
-const int BOARD_SIZE    = 36;
-const int INITIAL_MONEY = 10;
-const int MAX_MONEY     = 30;
-const int MAX_TURNS     = 400;
+const int GRID_SIZE      = 36;
+const int START_COINS    = 10;
+const int COIN_CAP       = 30;
+const int TURN_LIMIT     = 400;
 
-enum CellType{NORMAL=0,MONEY_GAIN=1,MONEY_LOSS=2,DIE_UPGRADE=3,
-              JUMP_FORWARD=4,JUMP_BACK=5,SKIP_TURN=6,EXTRA_TURN=7,
-              CARD=8,START=9,FINISH=10};
-struct Cell{int id;CellType type;int value;string emoji,name,desc;};
+enum TileKind{PLAIN=0,COIN_UP=1,COIN_DOWN=2,DICE_BOOST=3,
+              LEAP_AHEAD=4,FALL_BACK=5,LOSE_TURN=6,BONUS_TURN=7,
+              EVENT=8,ORIGIN=9,GOAL=10};
 
-Cell BOARD[BOARD_SIZE]={
-    {0,START,0,"H","Home","Game starts here"},
-    {1,NORMAL,0,"M","Meadow","A peaceful meadow"},
-    {2,MONEY_GAIN,3,"Sn","Snack Stand","Found snacks! +3"},
-    {3,NORMAL,0,"Fl","Flower Patch","Lovely flowers"},
-    {4,JUMP_FORWARD,4,"Cr","Quick Ride","Hop in! +4 cells"},
-    {5,NORMAL,0,"Pi","Pine Tree","Cool shade"},
-    {6,MONEY_LOSS,-3,"Pz","Pizza Stall","Bought pizza -3"},
-    {7,DIE_UPGRADE,0,"Ca","Casino Tent","Upgrade to 12-die!"},
-    {8,NORMAL,0,"Gv","Gravel Path","Keep walking"},
-    {9,MONEY_GAIN,5,"Rt","Ring Toss","You won! +5"},
-    {10,SKIP_TURN,0,"Tf","Traffic Jam","Skip your turn"},
-    {11,NORMAL,0,"Su","Sunflower","Beautiful view"},
-    {12,MONEY_LOSS,-5,"Lw","Lost Wallet","Oops! Lost -5"},
-    {13,CARD,0,"Cd","Event Card","Draw a card!"},
-    {14,NORMAL,0,"Cm","Campsite","Rest a moment"},
-    {15,MONEY_GAIN,4,"Gf","Gift Box","Surprise gift! +4"},
-    {16,JUMP_BACK,-3,"Mb","Missed Bus","Missed bus! -3 cells"},
-    {17,NORMAL,0,"Ck","Creek","Cool creek"},
-    {18,EXTRA_TURN,0,"Lk","Lucky Clover","Extra turn!"},
-    {19,NORMAL,0,"Ps","Picnic Spot","Perfect picnic spot"},
-    {20,MONEY_LOSS,-4,"Tx","Taxi Home","Took taxi -4"},
-    {21,NORMAL,0,"Rb","Rainbow","Beautiful rainbow"},
-    {22,MONEY_GAIN,6,"Tr","Tournament","Won tourney! +6"},
-    {23,JUMP_FORWARD,3,"Ft","Fast Track","Speed ahead! +3"},
-    {24,CARD,0,"Cd","Event Card","Draw a card!"},
-    {25,NORMAL,0,"Fg","Fairground","Fun fair nearby"},
-    {26,SKIP_TURN,0,"Rs","Rest Stop","Too tired! Skip"},
-    {27,DIE_UPGRADE,0,"Sb","Star Bonus","Upgrade to 12-die!"},
-    {28,MONEY_LOSS,-3,"Dl","Long Delay","Delayed! -3"},
-    {29,NORMAL,0,"Gd","Garden","Lovely garden"},
-    {30,MONEY_GAIN,4,"Ms","Music Show","Awesome show! +4"},
-    {31,JUMP_BACK,-4,"Rn","Rain Shower","Wet! -4 cells"},
-    {32,EXTRA_TURN,0,"Eb","Energy Boost","Extra turn!"},
-    {33,CARD,0,"Cd","Event Card","Draw a card!"},
-    {34,NORMAL,0,"Cs","Carousel","Almost there!"},
-    {35,FINISH,0,"FN","Finish!","You made it!"},
+struct Tile{int id;TileKind kind;int val;string icon,label,hint;};
+
+Tile GRID[GRID_SIZE]={
+    {0,ORIGIN,0,"H","Home","Game starts here"},
+    {1,PLAIN,0,"M","Meadow","A peaceful meadow"},
+    {2,COIN_UP,3,"Sn","Snack Stand","Found snacks! +3"},
+    {3,PLAIN,0,"Fl","Flower Patch","Lovely flowers"},
+    {4,LEAP_AHEAD,4,"Cr","Quick Ride","Hop in! +4 cells"},
+    {5,PLAIN,0,"Pi","Pine Tree","Cool shade"},
+    {6,COIN_DOWN,-3,"Pz","Pizza Stall","Bought pizza -3"},
+    {7,DICE_BOOST,0,"Ca","Casino Tent","Upgrade to 12-die!"},
+    {8,PLAIN,0,"Gv","Gravel Path","Keep walking"},
+    {9,COIN_UP,5,"Rt","Ring Toss","You won! +5"},
+    {10,LOSE_TURN,0,"Tf","Traffic Jam","Skip your turn"},
+    {11,PLAIN,0,"Su","Sunflower","Beautiful view"},
+    {12,COIN_DOWN,-5,"Lw","Lost Wallet","Oops! Lost -5"},
+    {13,EVENT,0,"Cd","Event Card","Draw a card!"},
+    {14,PLAIN,0,"Cm","Campsite","Rest a moment"},
+    {15,COIN_UP,4,"Gf","Gift Box","Surprise gift! +4"},
+    {16,FALL_BACK,-3,"Mb","Missed Bus","Missed bus! -3 cells"},
+    {17,PLAIN,0,"Ck","Creek","Cool creek"},
+    {18,BONUS_TURN,0,"Lk","Lucky Clover","Extra turn!"},
+    {19,PLAIN,0,"Ps","Picnic Spot","Perfect picnic spot"},
+    {20,COIN_DOWN,-4,"Tx","Taxi Home","Took taxi -4"},
+    {21,PLAIN,0,"Rb","Rainbow","Beautiful rainbow"},
+    {22,COIN_UP,6,"Tr","Tournament","Won tourney! +6"},
+    {23,LEAP_AHEAD,3,"Ft","Fast Track","Speed ahead! +3"},
+    {24,EVENT,0,"Cd","Event Card","Draw a card!"},
+    {25,PLAIN,0,"Fg","Fairground","Fun fair nearby"},
+    {26,LOSE_TURN,0,"Rs","Rest Stop","Too tired! Skip"},
+    {27,DICE_BOOST,0,"Sb","Star Bonus","Upgrade to 12-die!"},
+    {28,COIN_DOWN,-3,"Dl","Long Delay","Delayed! -3"},
+    {29,PLAIN,0,"Gd","Garden","Lovely garden"},
+    {30,COIN_UP,4,"Ms","Music Show","Awesome show! +4"},
+    {31,FALL_BACK,-4,"Rn","Rain Shower","Wet! -4 cells"},
+    {32,BONUS_TURN,0,"Eb","Energy Boost","Extra turn!"},
+    {33,EVENT,0,"Cd","Event Card","Draw a card!"},
+    {34,PLAIN,0,"Cs","Carousel","Almost there!"},
+    {35,GOAL,0,"FN","Finish!","You made it!"},
 };
-struct CardEffect{string name;int money_delta,jump;bool skip,extra;string desc;};
-const vector<CardEffect> CARDS={
+
+struct CardAction{string label;int coin_delta,jump;bool freeze,again;string hint;};
+const vector<CardAction> DECK={
     {"Picnic Feast",+3,0,false,false,"Feast! +3 money"},
     {"Storm Warning",-2,0,false,false,"Storm! -2 money"},
     {"Shortcut",0,+3,false,false,"Shortcut! +3 cells"},
@@ -63,525 +65,517 @@ const vector<CardEffect> CARDS={
     {"Drop Backpack",-3,0,false,false,"Dropped stuff! -3"},
 };
 
-// ── Bitmask Power-ups ── 5 items tracked in 5 bits
-const int NUM_ITEMS=5;
-struct PowerUp{int cell_id;string name;int bonus;};
-const PowerUp ITEMS[NUM_ITEMS]={
+const int ITEM_COUNT=5;
+struct Collectible{int tile_id;string tag;int bonus;};
+const Collectible LOOT[ITEM_COUNT]={
     {5,"Compass",2},{11,"Sunscreen",2},{17,"Water Bottle",3},
     {21,"Picnic Blanket",2},{29,"Trail Map",3}
 };
-int item_at_cell(int pos){
-    for(int i=0;i<NUM_ITEMS;i++) if(ITEMS[i].cell_id==pos) return i;
+int loot_at(int pos){
+    for(int i=0;i<ITEM_COUNT;i++) if(LOOT[i].tile_id==pos) return i;
     return -1;
 }
 
-struct State{int pos,money,die;};
+struct PlayerState{int pos,coins,dice_tier;};
 
-// ── Prefix Sum ── Build O(N), Query O(1)
-int PREFIX_GAINS[BOARD_SIZE+1];
-void build_prefix_sums(){
-    PREFIX_GAINS[0]=0;
-    for(int i=0;i<BOARD_SIZE;i++){
-        PREFIX_GAINS[i+1]=PREFIX_GAINS[i]+BOARD[i].value;
-    }
+// ── Prefix Sums ──────────────────────────────────────────────
+int CUM_VALS[GRID_SIZE+1];
+void init_prefix(){
+    CUM_VALS[0]=0;
+    for(int i=0;i<GRID_SIZE;i++)
+        CUM_VALS[i+1]=CUM_VALS[i]+GRID[i].val;
 }
-int prefix_query(int L,int R){
-    if(L>R) return 0;
-    L=max(0,L); R=min(BOARD_SIZE-1,R);
-    return PREFIX_GAINS[R+1]-PREFIX_GAINS[L];
+int range_sum(int lo,int hi){
+    if(lo>hi) return 0;
+    lo=max(0,lo); hi=min(GRID_SIZE-1,hi);
+    return CUM_VALS[hi+1]-CUM_VALS[lo];
 }
 
-State apply_cell(int pos,int money,int die){
-    if(pos<0||pos>=BOARD_SIZE) return {pos,money,die};
-    const Cell& c=BOARD[pos];
-    switch(c.type){
-        case MONEY_GAIN: case MONEY_LOSS: money+=c.value; break;
-        case DIE_UPGRADE: die=1; break;
-        case JUMP_FORWARD: pos=min(pos+c.value,BOARD_SIZE-1); break;
-        case JUMP_BACK: pos=max(pos+c.value,0); break;
-        case CARD:{int idx=pos%(int)CARDS.size();
-            money+=CARDS[idx].money_delta;
-            pos=max(0,min(BOARD_SIZE-1,pos+CARDS[idx].jump));break;}
+PlayerState resolve_tile(int pos,int coins,int dice_tier){
+    if(pos<0||pos>=GRID_SIZE) return {pos,coins,dice_tier};
+    const Tile& t=GRID[pos];
+    switch(t.kind){
+        case COIN_UP: case COIN_DOWN: coins+=t.val; break;
+        case DICE_BOOST: dice_tier=1; break;
+        case LEAP_AHEAD: pos=min(pos+t.val,GRID_SIZE-1); break;
+        case FALL_BACK:  pos=max(pos+t.val,0); break;
+        case EVENT:{int idx=pos%(int)DECK.size();
+            coins+=DECK[idx].coin_delta;
+            pos=max(0,min(GRID_SIZE-1,pos+DECK[idx].jump));break;}
         default: break;
     }
-    if(money<=0){money=INITIAL_MONEY;pos=0;die=0;}
-    money=min(money,MAX_MONEY);
-    return {pos,money,die};
+    if(coins<=0){coins=START_COINS;pos=0;dice_tier=0;}
+    coins=min(coins,COIN_CAP);
+    return {pos,coins,dice_tier};
 }
 
-// ── Grundy ── O(B*M*D) total states, memoized
-unordered_map<int,int> g_memo;
-unordered_set<int> g_vis;
-inline int enc(int pos,int money,int die){return pos*(MAX_MONEY+1)*2+money*2+die;}
-int mex(vector<int>& v){
-    unordered_set<int> s(v.begin(),v.end());
-    int m=0; while(s.count(m))m++; return m;
+// ── Sprague-Grundy ───────────────────────────────────────────
+unordered_map<int,int> sg_cache;
+unordered_set<int> sg_stack;
+inline int pack(int pos,int coins,int dt){return pos*(COIN_CAP+1)*2+coins*2+dt;}
+int mex_of(vector<int>& vals){
+    unordered_set<int> seen(vals.begin(),vals.end());
+    int m=0; while(seen.count(m))m++; return m;
 }
-int grundy(int pos,int money,int die){
-    money=min(money,MAX_MONEY);
-    if(pos>=BOARD_SIZE-1) return 0;
-    int k=enc(pos,money,die);
-    auto it=g_memo.find(k); if(it!=g_memo.end()) return it->second;
-    if(g_vis.count(k)) return 0;
-    g_vis.insert(k);
-    int faces=(die==0)?6:12;
-    vector<int> cg;
+int sg_value(int pos,int coins,int dt){
+    coins=min(coins,COIN_CAP);
+    if(pos>=GRID_SIZE-1) return 0;
+    int key=pack(pos,coins,dt);
+    auto it=sg_cache.find(key); if(it!=sg_cache.end()) return it->second;
+    if(sg_stack.count(key)) return 0;
+    sg_stack.insert(key);
+    int faces=(dt==0)?6:12;
+    vector<int> child_vals;
     for(int r=1;r<=faces;r++){
-        int np=pos+r;
-        if(np>BOARD_SIZE-1) continue;
-        State ns=apply_cell(np,money,die);
-        cg.push_back(ns.pos>=BOARD_SIZE-1?0:grundy(ns.pos,ns.money,ns.die));
+        int np=pos+r; if(np>GRID_SIZE-1) continue;
+        PlayerState ns=resolve_tile(np,coins,dt);
+        child_vals.push_back(ns.pos>=GRID_SIZE-1?0:sg_value(ns.pos,ns.coins,ns.dice_tier));
     }
-    int g=cg.empty()?0:mex(cg);
-    g_memo[k]=g; g_vis.erase(k);
+    int g=child_vals.empty()?0:mex_of(child_vals);
+    sg_cache[key]=g; sg_stack.erase(key);
     return g;
 }
 
-// ── Binary Search: min coins for winning position ── O(log M * Grundy)
-bool canWin(int pos,int coins,int die){return grundy(pos,min(coins,MAX_MONEY),die)!=0;}
-int binarySearchMinCoins(int pos,int die){
-    int lo=1,hi=MAX_MONEY,result=MAX_MONEY;
+// ── Binary Search: minimum coins to be in winning position ───
+bool is_winning(int pos,int coins,int dt){return sg_value(pos,min(coins,COIN_CAP),dt)!=0;}
+int min_coins_to_win(int pos,int dt){
+    int lo=1,hi=COIN_CAP,ans=COIN_CAP;
     while(lo<=hi){
         int mid=(lo+hi)/2;
-        if(canWin(pos,mid,die)){result=mid;hi=mid-1;}
+        if(is_winning(pos,mid,dt)){ans=mid;hi=mid-1;}
         else lo=mid+1;
     }
-    return result;
+    return ans;
 }
 
-// ── BFS: shortest path to finish ── O(V+E)
-vector<int> bfs_min_moves(){
-    vector<int> dist(BOARD_SIZE,INT_MAX);
+// ── BFS: fewest moves to finish ──────────────────────────────
+vector<int> bfs_to_goal(){
+    vector<int> d(GRID_SIZE,INT_MAX);
     queue<int> q;
-    dist[BOARD_SIZE-1]=0;
-    vector<vector<int>> rev(BOARD_SIZE);
-    for(int src=0;src<BOARD_SIZE-1;src++){
+    d[GRID_SIZE-1]=0;
+    vector<vector<int>> back(GRID_SIZE);
+    for(int src=0;src<GRID_SIZE-1;src++){
         for(int r=1;r<=12;r++){
-            int raw=src+r;
-            if(raw>=BOARD_SIZE) break;
-            State ns=apply_cell(raw,INITIAL_MONEY,0);
-            int dst=min(ns.pos,BOARD_SIZE-1);
-            if(dst!=src) rev[dst].push_back(src);
+            int raw=src+r; if(raw>=GRID_SIZE) break;
+            PlayerState ns=resolve_tile(raw,START_COINS,0);
+            int dst=min(ns.pos,GRID_SIZE-1);
+            if(dst!=src) back[dst].push_back(src);
         }
     }
-    q.push(BOARD_SIZE-1);
+    q.push(GRID_SIZE-1);
     while(!q.empty()){
         int u=q.front();q.pop();
-        for(int v:rev[u])
-            if(dist[v]==INT_MAX){dist[v]=dist[u]+1;q.push(v);}
+        for(int v:back[u])
+            if(d[v]==INT_MAX){d[v]=d[u]+1;q.push(v);}
     }
-    return dist;
+    return d;
 }
 
-// ── Dijkstra: minimum-risk path to finish ── O(E log V)
-int landing_risk(int raw){
-    const Cell& c=BOARD[raw];
+// ── Dijkstra: lowest-risk path to finish ─────────────────────
+int tile_risk(int raw){
+    const Tile& t=GRID[raw];
     int cost=1;
-    switch(c.type){
-        case MONEY_LOSS: cost+=abs(c.value)*2; break;
-        case SKIP_TURN: cost+=6; break;
-        case JUMP_BACK: cost+=5+abs(c.value); break;
-        case CARD: cost+=3; break;
-        case MONEY_GAIN: cost=max(1,cost-c.value/2); break;
-        case JUMP_FORWARD: cost=1; break;
-        case EXTRA_TURN: cost=1; break;
+    switch(t.kind){
+        case COIN_DOWN:  cost+=abs(t.val)*2; break;
+        case LOSE_TURN:  cost+=6; break;
+        case FALL_BACK:  cost+=5+abs(t.val); break;
+        case EVENT:      cost+=3; break;
+        case COIN_UP:    cost=max(1,cost-t.val/2); break;
+        case LEAP_AHEAD: cost=1; break;
+        case BONUS_TURN: cost=1; break;
         default: break;
     }
     return max(1,cost);
 }
-vector<int> dijkstra_min_risk(){
-    vector<vector<pair<int,int>>> rev(BOARD_SIZE);
-    for(int src=0;src<BOARD_SIZE-1;src++){
+vector<int> dijkstra_safest(){
+    vector<vector<pair<int,int>>> back(GRID_SIZE);
+    for(int src=0;src<GRID_SIZE-1;src++){
         for(int r=1;r<=12;r++){
-            int raw=src+r;
-            if(raw>=BOARD_SIZE) break;
-            State ns=apply_cell(raw,INITIAL_MONEY,0);
-            int dst=min(ns.pos,BOARD_SIZE-1);
-            if(dst!=src) rev[dst].push_back({src,landing_risk(raw)});
+            int raw=src+r; if(raw>=GRID_SIZE) break;
+            PlayerState ns=resolve_tile(raw,START_COINS,0);
+            int dst=min(ns.pos,GRID_SIZE-1);
+            if(dst!=src) back[dst].push_back({src,tile_risk(raw)});
         }
     }
-    const int INF=1e9;
-    vector<int> dist(BOARD_SIZE,INF);
+    const int BIG=1e9;
+    vector<int> dist(GRID_SIZE,BIG);
     priority_queue<pair<int,int>,vector<pair<int,int>>,greater<pair<int,int>>> pq;
-    dist[BOARD_SIZE-1]=0;
-    pq.push({0,BOARD_SIZE-1});
+    dist[GRID_SIZE-1]=0; pq.push({0,GRID_SIZE-1});
     while(!pq.empty()){
-        auto cur=pq.top(); pq.pop();
-        int d=cur.first,u=cur.second;
+        auto [d,u]=pq.top(); pq.pop();
         if(d!=dist[u]) continue;
-        for(auto e:rev[u]){
-            int v=e.first,w=e.second;
-            if(dist[v]>d+w){
-                dist[v]=d+w;
-                pq.push({dist[v],v});
-            }
-        }
+        for(auto [v,w]:back[u])
+            if(dist[v]>d+w){dist[v]=d+w;pq.push({dist[v],v});}
     }
     return dist;
 }
 
-// ── Minimax: depth-limited AI ── O(D^depth)
-int minimax(int pos,int money,int die,int depth,bool maximizer){
-    if(pos>=BOARD_SIZE-1) return maximizer?10000:-10000;
+// ── Minimax ───────────────────────────────────────────────────
+int minimax_eval(int pos,int coins,int dt,int depth,bool maxer){
+    if(pos>=GRID_SIZE-1) return maxer?10000:-10000;
     if(depth==0) return pos;
-    int faces=(die==0)?6:12;
-    if(maximizer){
+    int faces=(dt==0)?6:12;
+    if(maxer){
         int best=INT_MIN;
         for(int r=1;r<=faces;r++){
-            int raw=pos+r; if(raw>=BOARD_SIZE) continue;
-            State ns=apply_cell(raw,money,die);
-            best=max(best,minimax(ns.pos,ns.money,ns.die,depth-1,false));
+            int raw=pos+r; if(raw>=GRID_SIZE) continue;
+            PlayerState ns=resolve_tile(raw,coins,dt);
+            best=max(best,minimax_eval(ns.pos,ns.coins,ns.dice_tier,depth-1,false));
         }
         return best==INT_MIN?pos:best;
     } else {
         int worst=INT_MAX;
         for(int r=1;r<=faces;r++){
-            int raw=pos+r; if(raw>=BOARD_SIZE) continue;
-            State ns=apply_cell(raw,money,die);
-            worst=min(worst,minimax(ns.pos,ns.money,ns.die,depth-1,true));
+            int raw=pos+r; if(raw>=GRID_SIZE) continue;
+            PlayerState ns=resolve_tile(raw,coins,dt);
+            worst=min(worst,minimax_eval(ns.pos,ns.coins,ns.dice_tier,depth-1,true));
         }
         return worst==INT_MAX?pos:worst;
     }
 }
-int minimaxBestRoll(int pos,int money,int die,int depth=4){
-    int faces=(die==0)?6:12;
-    int bestRoll=1,bestVal=INT_MIN;
+int minimax_pick(int pos,int coins,int dt,int depth=4){
+    int faces=(dt==0)?6:12;
+    int pick=1,top=INT_MIN;
     for(int r=1;r<=faces;r++){
-        int raw=pos+r; if(raw>=BOARD_SIZE) continue;
-        State ns=apply_cell(raw,money,die);
-        int val=minimax(ns.pos,ns.money,ns.die,depth-1,false);
-        if(val>bestVal){bestVal=val;bestRoll=r;}
+        int raw=pos+r; if(raw>=GRID_SIZE) continue;
+        PlayerState ns=resolve_tile(raw,coins,dt);
+        int sc=minimax_eval(ns.pos,ns.coins,ns.dice_tier,depth-1,false);
+        if(sc>top){top=sc;pick=r;}
     }
-    return bestRoll;
+    return pick;
 }
 
-// ── Move List ─────────────────────────────────────────────────
-int lookaheadScore(int pos,int money,int die,int depth){
-    if(pos>=BOARD_SIZE-1) return 100000+money;
-    if(depth==0) return pos*1000+money;
-    int faces=(die==0)?6:12;
+// ── Lookahead ─────────────────────────────────────────────────
+int foresight_score(int pos,int coins,int dt,int depth){
+    if(pos>=GRID_SIZE-1) return 100000+coins;
+    if(depth==0) return pos*1000+coins;
+    int faces=(dt==0)?6:12;
     int best=INT_MIN;
     for(int r=1;r<=faces;r++){
-        int raw=pos+r; if(raw>=BOARD_SIZE) continue;
-        State ns=apply_cell(raw,money,die);
-        best=max(best,lookaheadScore(ns.pos,ns.money,ns.die,depth-1));
+        int raw=pos+r; if(raw>=GRID_SIZE) continue;
+        PlayerState ns=resolve_tile(raw,coins,dt);
+        best=max(best,foresight_score(ns.pos,ns.coins,ns.dice_tier,depth-1));
     }
-    return best==INT_MIN?pos*1000+money:best;
+    return best==INT_MIN?pos*1000+coins:best;
 }
-int lookaheadBestRoll(int pos,int money,int die,int depth=4){
-    int faces=(die==0)?6:12;
-    int bestRoll=1,bestVal=INT_MIN;
+int foresight_pick(int pos,int coins,int dt,int depth=4){
+    int faces=(dt==0)?6:12;
+    int pick=1,top=INT_MIN;
     for(int r=1;r<=faces;r++){
-        int raw=pos+r; if(raw>=BOARD_SIZE) continue;
-        State ns=apply_cell(raw,money,die);
-        int val=lookaheadScore(ns.pos,ns.money,ns.die,depth-1);
-        if(val>bestVal){bestVal=val;bestRoll=r;}
+        int raw=pos+r; if(raw>=GRID_SIZE) continue;
+        PlayerState ns=resolve_tile(raw,coins,dt);
+        int sc=foresight_score(ns.pos,ns.coins,ns.dice_tier,depth-1);
+        if(sc>top){top=sc;pick=r;}
     }
-    return bestRoll;
+    return pick;
 }
 
-struct Move{int roll,npos,nmoney,ndie,gval,minimax_val;bool win,skip,extra;
-            string cname,cemoji,cdesc,cardname,carddesc;
-            bool collected_item;int item_id;string item_name;};
+// ── Move struct + enumeration ─────────────────────────────────
+struct RollOption{
+    int roll,next_pos,next_coins,next_dt,sg_val,mm_score;
+    bool is_win,freezes,repeats;
+    string tile_name,tile_icon,tile_hint,card_name,card_hint;
+    bool picked_loot; int loot_id; string loot_name;
+};
 
-vector<Move> list_moves(int pos,int money,int die,int mask=0){
-    vector<Move> mv;
-    int faces=(die==0)?6:12;
+vector<RollOption> enumerate_moves(int pos,int coins,int dt,int mask=0){
+    vector<RollOption> opts;
+    int faces=(dt==0)?6:12;
     for(int r=1;r<=faces;r++){
-        int raw=pos+r; if(raw>BOARD_SIZE-1) continue;
-        const Cell& land=BOARD[raw];
-        State ns=apply_cell(raw,money,die);
-        string cn="",cd=""; bool sk=false,ex=false;
-        if(land.type==CARD){int idx=raw%(int)CARDS.size();
-            cn=CARDS[idx].name;cd=CARDS[idx].desc;sk=CARDS[idx].skip;ex=CARDS[idx].extra;}
-        if(land.type==SKIP_TURN) sk=true;
-        if(land.type==EXTRA_TURN) ex=true;
-        int g=ns.pos>=BOARD_SIZE-1?0:grundy(ns.pos,ns.money,ns.die);
-        int mm=minimax(ns.pos,ns.money,ns.die,3,false);
-        int item_idx=item_at_cell(raw);
-        bool got_item=(item_idx>=0&&!((mask>>item_idx)&1));
-        string item_nm=got_item?ITEMS[item_idx].name:"";
-        mv.push_back({r,ns.pos,ns.money,ns.die,g,mm,(g==0),sk,ex,
-                       land.name,land.emoji,land.desc,cn,cd,
-                       got_item,item_idx,item_nm});
+        int raw=pos+r; if(raw>GRID_SIZE-1) continue;
+        const Tile& t=GRID[raw];
+        PlayerState ns=resolve_tile(raw,coins,dt);
+        string cn="",cd=""; bool fr=false,rp=false;
+        if(t.kind==EVENT){int idx=raw%(int)DECK.size();
+            cn=DECK[idx].label;cd=DECK[idx].hint;fr=DECK[idx].freeze;rp=DECK[idx].again;}
+        if(t.kind==LOSE_TURN) fr=true;
+        if(t.kind==BONUS_TURN) rp=true;
+        int gv=ns.pos>=GRID_SIZE-1?0:sg_value(ns.pos,ns.coins,ns.dice_tier);
+        int mv=minimax_eval(ns.pos,ns.coins,ns.dice_tier,3,false);
+        int li=loot_at(raw);
+        bool got=(li>=0&&!((mask>>li)&1));
+        string ln=got?LOOT[li].tag:"";
+        opts.push_back({r,ns.pos,ns.coins,ns.dice_tier,gv,mv,(gv==0),fr,rp,
+                        t.label,t.icon,t.hint,cn,cd,got,li,ln});
     }
-    sort(mv.begin(),mv.end(),[](const Move&a,const Move&b){
-        if(a.win!=b.win) return a.win>b.win; return a.npos>b.npos;});
-    return mv;
+    sort(opts.begin(),opts.end(),[](const RollOption&a,const RollOption&b){
+        if(a.is_win!=b.is_win) return a.is_win>b.is_win;
+        return a.next_pos>b.next_pos;
+    });
+    return opts;
 }
-void print_moves(const vector<Move>& mv){
+void emit_moves(const vector<RollOption>& opts){
     cout<<"MOVES_START\n";
-    for(auto& m:mv)
-        cout<<"MOVE|"<<m.roll<<"|"<<m.npos<<"|"<<m.nmoney<<"|"<<m.ndie
-            <<"|"<<m.gval<<"|"<<(m.win?"WIN":"LOSS")
-            <<"|"<<m.cname<<"|"<<m.cemoji<<"|"<<m.cdesc
-            <<"|"<<m.cardname<<"|"<<m.carddesc
-            <<"|"<<(m.skip?"1":"0")<<"|"<<(m.extra?"1":"0")
-            <<"|"<<m.minimax_val
-            <<"|"<<(m.collected_item?"1":"0")<<"|"<<m.item_id<<"|"<<m.item_name<<"\n";
+    for(auto& o:opts)
+        cout<<"MOVE|"<<o.roll<<"|"<<o.next_pos<<"|"<<o.next_coins<<"|"<<o.next_dt
+            <<"|"<<o.sg_val<<"|"<<(o.is_win?"WIN":"LOSS")
+            <<"|"<<o.tile_name<<"|"<<o.tile_icon<<"|"<<o.tile_hint
+            <<"|"<<o.card_name<<"|"<<o.card_hint
+            <<"|"<<(o.freezes?"1":"0")<<"|"<<(o.repeats?"1":"0")
+            <<"|"<<o.mm_score
+            <<"|"<<(o.picked_loot?"1":"0")<<"|"<<o.loot_id<<"|"<<o.loot_name<<"\n";
     cout<<"MOVES_END\n";
 }
 
-void dump_bfs(){
-    auto dist=bfs_min_moves();
+void emit_bfs(){
+    auto d=bfs_to_goal();
     cout<<"BFS_START\n";
-    for(int i=0;i<BOARD_SIZE;i++)
-        cout<<"BFS|"<<i<<"|"<<(dist[i]==INT_MAX?-1:dist[i])<<"\n";
+    for(int i=0;i<GRID_SIZE;i++)
+        cout<<"BFS|"<<i<<"|"<<(d[i]==INT_MAX?-1:d[i])<<"\n";
     cout<<"BFS_END\n";
 }
-void dump_dijkstra(){
-    auto dist=dijkstra_min_risk();
+void emit_dijkstra(){
+    auto d=dijkstra_safest();
     cout<<"DIJKSTRA_START\n";
-    for(int i=0;i<BOARD_SIZE;i++)
-        cout<<"DIJKSTRA|"<<i<<"|"<<(dist[i]>=1000000000?-1:dist[i])<<"\n";
+    for(int i=0;i<GRID_SIZE;i++)
+        cout<<"DIJKSTRA|"<<i<<"|"<<(d[i]>=1000000000?-1:d[i])<<"\n";
     cout<<"DIJKSTRA_END\n";
 }
-void dump_prefix(){
+void emit_prefix(){
     cout<<"PREFIX_START\n";
-    for(int i=0;i<BOARD_SIZE;i++)
-        cout<<"PREFIX|"<<i<<"|"<<prefix_query(0,i)<<"\n";
+    for(int i=0;i<GRID_SIZE;i++)
+        cout<<"PREFIX|"<<i<<"|"<<range_sum(0,i)<<"\n";
     cout<<"PREFIX_END\n";
 }
 
-void dump_algo_timings(int pos,int money,int die){
+void emit_timings(int pos,int coins,int dt){
     cout<<"TIMING_START\n";
-    g_memo.clear();g_vis.clear();
+    sg_cache.clear(); sg_stack.clear();
     auto t0=high_resolution_clock::now();
-    int gv=grundy(pos,money,die);
+    int gv=sg_value(pos,coins,dt);
     auto t1=high_resolution_clock::now();
     cout<<"TIMING|Grundy (Sprague-Grundy)|O(B*M*D) ≈ O(2232*faces)|"
         <<duration_cast<microseconds>(t1-t0).count()
         <<"us|G="<<gv<<"\n";
 
     auto t2=high_resolution_clock::now();
-    int mc=binarySearchMinCoins(pos,die);
+    int mc=min_coins_to_win(pos,dt);
     auto t3=high_resolution_clock::now();
     cout<<"TIMING|Binary Search (min winning coins)|O(log M * B*M*D)|"
         <<duration_cast<microseconds>(t3-t2).count()
         <<"us|MinCoins="<<mc<<"\n";
 
     auto t4=high_resolution_clock::now();
-    build_prefix_sums();
+    init_prefix();
     auto t5=high_resolution_clock::now();
-    int pq=prefix_query(pos,BOARD_SIZE-1);
+    int pv=range_sum(pos,GRID_SIZE-1);
     cout<<"TIMING|Prefix Sum (build+query)|Build O(N), Query O(1)|"
         <<duration_cast<microseconds>(t5-t4).count()
-        <<"us|RangeGain["<<pos<<"-35]="<<pq<<"\n";
+        <<"us|RangeGain["<<pos<<"-35]="<<pv<<"\n";
 
     auto t6=high_resolution_clock::now();
-    auto dist=bfs_min_moves();
+    auto bd=bfs_to_goal();
     auto t7=high_resolution_clock::now();
-    int bd=dist[pos]==INT_MAX?-1:dist[pos];
-    cout<<"TIMING|BFS (shortest path to finish)|O(V+E) = O("<<BOARD_SIZE<<"*12)|"
+    int bv=bd[pos]==INT_MAX?-1:bd[pos];
+    cout<<"TIMING|BFS (shortest path to finish)|O(V+E) = O("<<GRID_SIZE<<"*12)|"
         <<duration_cast<microseconds>(t7-t6).count()
-        <<"us|MinMoves="<<bd<<"\n";
+        <<"us|MinMoves="<<bv<<"\n";
 
     auto t8=high_resolution_clock::now();
-    int mm=lookaheadBestRoll(pos,money,die,4);
+    int fp=foresight_pick(pos,coins,dt,4);
     auto t9=high_resolution_clock::now();
     cout<<"TIMING|Minimax (depth=4)|O(D^4) ≈ O(20736)|"
         <<duration_cast<microseconds>(t9-t8).count()
-        <<"us|BestRoll="<<mm<<"\n";
+        <<"us|BestRoll="<<fp<<"\n";
 
     auto t10=high_resolution_clock::now();
-    auto risk=dijkstra_min_risk();
+    auto risk=dijkstra_safest();
     auto t11=high_resolution_clock::now();
-    int rd=risk[pos]>=1000000000?-1:risk[pos];
+    int rv=risk[pos]>=1000000000?-1:risk[pos];
     cout<<"TIMING|Dijkstra (minimum-risk path)|O(E log V)|"
         <<duration_cast<microseconds>(t11-t10).count()
-        <<"us|MinRisk="<<rd<<"\n";
+        <<"us|MinRisk="<<rv<<"\n";
 
     cout<<"TIMING_END\n";
 }
 
-void simulate2(int p1pos,int p1m,int p1d,int p2pos,int p2m,int p2d){
+void run_simulation(int p1p,int p1c,int p1d,int p2p,int p2c,int p2d){
     cout<<"SIM_START\n";
-    int turn=1,cur=1;
-    bool p1sk=false,p2sk=false;
-    while(turn<=MAX_TURNS){
-        int pos=(cur==1)?p1pos:p2pos;
-        int mon=(cur==1)?p1m:p2m;
-        int die=(cur==1)?p1d:p2d;
-        if(pos>=BOARD_SIZE-1) break;
-        bool& mysk=(cur==1)?p1sk:p2sk;
-        if(mysk){cout<<"SIM_SKIP|"<<turn<<"|"<<cur<<"\n";
-            mysk=false;cur=3-cur;turn++;continue;}
-        auto mv=list_moves(pos,mon,die);
-        if(mv.empty()){cur=3-cur;turn++;continue;}
-        const Move& b=mv[0];
-        cout<<"SIM_STEP|"<<turn<<"|"<<cur
-            <<"|"<<pos<<"|"<<mon<<"|"<<die<<"|"<<b.roll
-            <<"|"<<b.npos<<"|"<<b.nmoney<<"|"<<b.ndie
-            <<"|"<<(b.win?"WIN":"LOSS")
-            <<"|"<<b.cname<<"|"<<b.cardname
-            <<"|"<<(b.skip?"1":"0")<<"|"<<(b.extra?"1":"0")
-            <<"|"<<b.gval<<"\n";
-        if(cur==1){p1pos=b.npos;p1m=b.nmoney;p1d=b.ndie;}
-        else      {p2pos=b.npos;p2m=b.nmoney;p2d=b.ndie;}
-        int cp=(cur==1)?p1pos:p2pos;
-        if(cp>=BOARD_SIZE-1){cout<<"SIM_WIN|"<<cur<<"|"<<turn<<"\n";break;}
-        if(b.skip){bool& op=(cur==1)?p2sk:p1sk;op=true;}
-        if(b.extra){turn++;continue;}
-        cur=3-cur;turn++;
+    int turn=1,active=1;
+    bool p1freeze=false,p2freeze=false;
+    while(turn<=TURN_LIMIT){
+        int pos=(active==1)?p1p:p2p;
+        int cns=(active==1)?p1c:p2c;
+        int dt=(active==1)?p1d:p2d;
+        if(pos>=GRID_SIZE-1) break;
+        bool& frozen=(active==1)?p1freeze:p2freeze;
+        if(frozen){cout<<"SIM_SKIP|"<<turn<<"|"<<active<<"\n";
+            frozen=false;active=3-active;turn++;continue;}
+        auto opts=enumerate_moves(pos,cns,dt);
+        if(opts.empty()){active=3-active;turn++;continue;}
+        const RollOption& top=opts[0];
+        cout<<"SIM_STEP|"<<turn<<"|"<<active
+            <<"|"<<pos<<"|"<<cns<<"|"<<dt<<"|"<<top.roll
+            <<"|"<<top.next_pos<<"|"<<top.next_coins<<"|"<<top.next_dt
+            <<"|"<<(top.is_win?"WIN":"LOSS")
+            <<"|"<<top.tile_name<<"|"<<top.card_name
+            <<"|"<<(top.freezes?"1":"0")<<"|"<<(top.repeats?"1":"0")
+            <<"|"<<top.sg_val<<"\n";
+        if(active==1){p1p=top.next_pos;p1c=top.next_coins;p1d=top.next_dt;}
+        else         {p2p=top.next_pos;p2c=top.next_coins;p2d=top.next_dt;}
+        int cp=(active==1)?p1p:p2p;
+        if(cp>=GRID_SIZE-1){cout<<"SIM_WIN|"<<active<<"|"<<turn<<"\n";break;}
+        if(top.freezes){bool& opp=(active==1)?p2freeze:p1freeze;opp=true;}
+        if(top.repeats){turn++;continue;}
+        active=3-active;turn++;
     }
-    cout<<"SIM_END|"<<p1pos<<"|"<<p1m<<"|"<<p1d
-        <<"|"<<p2pos<<"|"<<p2m<<"|"<<p2d<<"\n";
+    cout<<"SIM_END|"<<p1p<<"|"<<p1c<<"|"<<p1d
+        <<"|"<<p2p<<"|"<<p2c<<"|"<<p2d<<"\n";
 }
 
-enum Strategy{RANDOM_AI=0,GREEDY_AI=1,MINIMAX_AI=2,GRUNDY_AI=3};
-const vector<string> STRATEGY_NAMES={"Random","Greedy","Minimax","Grundy"};
+enum Tactic{RAND=0,GREEDY=1,MMBOT=2,SGBOT=3};
+const vector<string> TACTIC_NAMES={"Random","Greedy","Minimax","Grundy"};
 
-int choose_roll(Strategy s,int pos,int money,int die,mt19937& rng){
-    vector<Move> moves=list_moves(pos,money,die);
-    if(moves.empty()) return 1;
-    if(s==GRUNDY_AI) return moves[0].roll;
-    if(s==MINIMAX_AI){
-        const Move* best=&moves[0];
-        for(const auto& m:moves)
-            if(m.npos>best->npos || (m.npos==best->npos && m.minimax_val>best->minimax_val))
-                best=&m;
+int pick_roll(Tactic t,int pos,int coins,int dt,mt19937& rng){
+    vector<RollOption> opts=enumerate_moves(pos,coins,dt);
+    if(opts.empty()) return 1;
+    if(t==SGBOT) return opts[0].roll;
+    if(t==MMBOT){
+        const RollOption* best=&opts[0];
+        for(const auto& o:opts)
+            if(o.next_pos>best->next_pos||(o.next_pos==best->next_pos&&o.mm_score>best->mm_score))
+                best=&o;
         return best->roll;
     }
-    if(s==GREEDY_AI){
-        const Move* best=&moves[0];
-        for(const auto& m:moves)
-            if(m.npos>best->npos || (m.npos==best->npos && m.nmoney>best->nmoney))
-                best=&m;
+    if(t==GREEDY){
+        const RollOption* best=&opts[0];
+        for(const auto& o:opts)
+            if(o.next_pos>best->next_pos||(o.next_pos==best->next_pos&&o.next_coins>best->next_coins))
+                best=&o;
         return best->roll;
     }
-    uniform_int_distribution<int> pick(0,(int)moves.size()-1);
-    return moves[pick(rng)].roll;
+    uniform_int_distribution<int> rnd(0,(int)opts.size()-1);
+    return opts[rnd(rng)].roll;
 }
 
-struct MatchResult{int winner,turns,p1money,p2money;};
-MatchResult play_match(Strategy s1,Strategy s2,mt19937& rng){
-    int p1pos=0,p2pos=0,p1m=INITIAL_MONEY,p2m=INITIAL_MONEY,p1d=0,p2d=0;
-    bool p1sk=false,p2sk=false;
-    int cur=1;
-    for(int turn=1;turn<=MAX_TURNS;turn++){
-        int& pos=(cur==1)?p1pos:p2pos;
-        int& money=(cur==1)?p1m:p2m;
-        int& die=(cur==1)?p1d:p2d;
-        bool& skip=(cur==1)?p1sk:p2sk;
-        if(pos>=BOARD_SIZE-1) return {cur,turn,p1m,p2m};
-        if(skip){skip=false;cur=3-cur;continue;}
-        int roll=choose_roll((cur==1)?s1:s2,pos,money,die,rng);
+struct GameResult{int winner,rounds,p1end,p2end;};
+GameResult run_match(Tactic t1,Tactic t2,mt19937& rng){
+    int p1p=0,p2p=0,p1c=START_COINS,p2c=START_COINS,p1d=0,p2d=0;
+    bool p1fr=false,p2fr=false;
+    int active=1;
+    for(int turn=1;turn<=TURN_LIMIT;turn++){
+        int& pos=(active==1)?p1p:p2p;
+        int& cns=(active==1)?p1c:p2c;
+        int& dt =(active==1)?p1d:p2d;
+        bool& fr=(active==1)?p1fr:p2fr;
+        if(pos>=GRID_SIZE-1) return {active,turn,p1c,p2c};
+        if(fr){fr=false;active=3-active;continue;}
+        int roll=pick_roll((active==1)?t1:t2,pos,cns,dt,rng);
         int raw=pos+roll;
-        if(raw<=BOARD_SIZE-1){
-            State ns=apply_cell(raw,money,die);
-            const Cell& c=BOARD[raw];
-            bool sk=(c.type==SKIP_TURN),ex=(c.type==EXTRA_TURN);
-            if(c.type==CARD){int idx=raw%(int)CARDS.size();sk=CARDS[idx].skip;ex=CARDS[idx].extra;}
-            pos=ns.pos; money=ns.money; die=ns.die;
-            if(pos>=BOARD_SIZE-1) return {cur,turn,p1m,p2m};
-            if(sk){bool& opp=(cur==1)?p2sk:p1sk;opp=true;}
+        if(raw<=GRID_SIZE-1){
+            PlayerState ns=resolve_tile(raw,cns,dt);
+            const Tile& t=GRID[raw];
+            bool sk=(t.kind==LOSE_TURN),ex=(t.kind==BONUS_TURN);
+            if(t.kind==EVENT){int idx=raw%(int)DECK.size();sk=DECK[idx].freeze;ex=DECK[idx].again;}
+            pos=ns.pos; cns=ns.coins; dt=ns.dice_tier;
+            if(pos>=GRID_SIZE-1) return {active,turn,p1c,p2c};
+            if(sk){bool& opp=(active==1)?p2fr:p1fr;opp=true;}
             if(ex) continue;
         }
-        cur=3-cur;
+        active=3-active;
     }
-    if(p1pos!=p2pos) return {p1pos>p2pos?1:2,MAX_TURNS,p1m,p2m};
-    return {p1m>=p2m?1:2,MAX_TURNS,p1m,p2m};
+    if(p1p!=p2p) return {p1p>p2p?1:2,TURN_LIMIT,p1c,p2c};
+    return {p1c>=p2c?1:2,TURN_LIMIT,p1c,p2c};
 }
 
-void dump_tournament(){
-    const int N=STRATEGY_NAMES.size(), ROUNDS=20;
-    vector<int> wins(N,0), games(N,0), turns_sum(N,0), money_sum(N,0);
+void emit_tournament(){
+    const int N=TACTIC_NAMES.size(), MATCHES=20;
+    vector<int> w(N,0),g(N,0),ts(N,0),ms(N,0);
     mt19937 rng(42);
     for(int a=0;a<N;a++){
         for(int b=0;b<N;b++){
             if(a==b) continue;
-            for(int r=0;r<ROUNDS;r++){
-                MatchResult res=play_match((Strategy)a,(Strategy)b,rng);
-                games[a]++; games[b]++;
-                turns_sum[a]+=res.turns; turns_sum[b]+=res.turns;
-                money_sum[a]+=res.p1money; money_sum[b]+=res.p2money;
-                if(res.winner==1) wins[a]++; else wins[b]++;
+            for(int r=0;r<MATCHES;r++){
+                GameResult res=run_match((Tactic)a,(Tactic)b,rng);
+                g[a]++;g[b]++;
+                ts[a]+=res.rounds;ts[b]+=res.rounds;
+                ms[a]+=res.p1end;ms[b]+=res.p2end;
+                if(res.winner==1) w[a]++; else w[b]++;
             }
         }
     }
     cout<<"TOURNAMENT_START\n";
     for(int i=0;i<N;i++){
-        double win_rate=games[i]?100.0*wins[i]/games[i]:0.0;
-        double avg_turns=games[i]?1.0*turns_sum[i]/games[i]:0.0;
-        double avg_money=games[i]?1.0*money_sum[i]/games[i]:0.0;
-        cout<<"TOURNAMENT|"<<STRATEGY_NAMES[i]<<"|"<<wins[i]<<"|"<<games[i]
-            <<"|"<<fixed<<setprecision(1)<<win_rate
-            <<"|"<<avg_turns<<"|"<<avg_money<<"\n";
+        double wr=g[i]?100.0*w[i]/g[i]:0.0;
+        double at=g[i]?1.0*ts[i]/g[i]:0.0;
+        double am=g[i]?1.0*ms[i]/g[i]:0.0;
+        cout<<"TOURNAMENT|"<<TACTIC_NAMES[i]<<"|"<<w[i]<<"|"<<g[i]
+            <<"|"<<fixed<<setprecision(1)<<wr<<"|"<<at<<"|"<<am<<"\n";
     }
     cout<<"TOURNAMENT_END\n";
 }
 
-void dump_cells(){
+void emit_tiles(){
     cout<<"CELLS_START\n";
-    for(int i=0;i<BOARD_SIZE;i++){
-        auto& c=BOARD[i];
-        cout<<"CELL|"<<c.id<<"|"<<(int)c.type<<"|"<<c.value
-            <<"|"<<c.emoji<<"|"<<c.name<<"|"<<c.desc<<"\n";
+    for(int i=0;i<GRID_SIZE;i++){
+        auto& t=GRID[i];
+        cout<<"CELL|"<<t.id<<"|"<<(int)t.kind<<"|"<<t.val
+            <<"|"<<t.icon<<"|"<<t.label<<"|"<<t.hint<<"\n";
     }
     cout<<"CELLS_END\n";
 }
-void dump_graph(){
+void emit_graph(){
     cout<<"GRAPH_START\n";
-    for(int i=0;i<BOARD_SIZE-1;i++) cout<<"EDGE|"<<i<<"|"<<(i+1)<<"|normal\n";
-    vector<tuple<int,int,string>> sp={
+    for(int i=0;i<GRID_SIZE-1;i++) cout<<"EDGE|"<<i<<"|"<<(i+1)<<"|normal\n";
+    vector<tuple<int,int,string>> specials={
         {4,8,"Quick Ride"},{16,13,"Missed Bus"},{23,26,"Fast Track"},
         {31,27,"Rain"},{13,16,"Card-WP"},{24,21,"Card-WP2"},
         {33,30,"Card-SC"},{18,20,"Lucky+skip"}};
-    for(const auto& e:sp)
+    for(const auto& e:specials)
         cout<<"EDGE|"<<get<0>(e)<<"|"<<get<1>(e)<<"|"<<get<2>(e)<<"\n";
     cout<<"GRAPH_END\n";
 }
 
 int main(int argc,char* argv[]){
     ios::sync_with_stdio(false); cin.tie(nullptr);
-    build_prefix_sums();
+    init_prefix();
     if(argc<2){cerr<<"Usage: engine <mode>\n";return 1;}
     string mode=argv[1];
-    if(mode=="cellinfo"){dump_cells();return 0;}
-    if(mode=="graph"){dump_graph();return 0;}
-    if(mode=="bfs"){dump_bfs();return 0;}
-    if(mode=="dijkstra"){dump_dijkstra();return 0;}
-    if(mode=="prefix"){dump_prefix();return 0;}
-    if(mode=="tournament"){dump_tournament();return 0;}
+    if(mode=="cellinfo")  {emit_tiles();return 0;}
+    if(mode=="graph")     {emit_graph();return 0;}
+    if(mode=="bfs")       {emit_bfs();return 0;}
+    if(mode=="dijkstra")  {emit_dijkstra();return 0;}
+    if(mode=="prefix")    {emit_prefix();return 0;}
+    if(mode=="tournament"){emit_tournament();return 0;}
     if(mode=="simulate"){
-        int p1p=0,p1m=INITIAL_MONEY,p1d=0,p2p=0,p2m=INITIAL_MONEY,p2d=0;
-        cin>>p1p>>p1m>>p1d>>p2p>>p2m>>p2d;
-        simulate2(p1p,p1m,p1d,p2p,p2m,p2d);
+        int p1p=0,p1c=START_COINS,p1d=0,p2p=0,p2c=START_COINS,p2d=0;
+        cin>>p1p>>p1c>>p1d>>p2p>>p2c>>p2d;
+        run_simulation(p1p,p1c,p1d,p2p,p2c,p2d);
         return 0;
     }
-    int pos=0,money=INITIAL_MONEY,die=0;
-    cin>>pos>>money>>die;
-    money=min(money,MAX_MONEY);
-    if(mode=="timings"){dump_algo_timings(pos,money,die);return 0;}
+    int pos=0,coins=START_COINS,dt=0;
+    cin>>pos>>coins>>dt;
+    coins=min(coins,COIN_CAP);
+    if(mode=="timings")  {emit_timings(pos,coins,dt);return 0;}
     if(mode=="binsearch"){
-        cout<<"BINSEARCH|"<<binarySearchMinCoins(pos,die)<<"\n";
+        cout<<"BINSEARCH|"<<min_coins_to_win(pos,dt)<<"\n";
         return 0;
     }
     if(mode=="grundy"){
-        int g=grundy(pos,money,die);
+        int g=sg_value(pos,coins,dt);
         cout<<"GRUNDY|"<<g<<"\n";
         cout<<"STATE|"<<(g!=0?"WINNING":"LOSING")<<"\n";
-        print_moves(list_moves(pos,money,die,0));
+        emit_moves(enumerate_moves(pos,coins,dt,0));
     } else if(mode=="moves"){
-        print_moves(list_moves(pos,money,die,0));
+        emit_moves(enumerate_moves(pos,coins,dt,0));
     } else if(mode=="apply"){
         int roll; cin>>roll;
         int raw=pos+roll;
-        if(raw>BOARD_SIZE-1){cout<<"INVALID|overshoot\n";}
+        if(raw>GRID_SIZE-1){cout<<"INVALID|overshoot\n";}
         else{
-            State ns=apply_cell(raw,money,die);
-            const Cell& c=BOARD[raw];
-            bool sk=(c.type==SKIP_TURN),ex=(c.type==EXTRA_TURN);
+            PlayerState ns=resolve_tile(raw,coins,dt);
+            const Tile& t=GRID[raw];
+            bool fr=(t.kind==LOSE_TURN),rp=(t.kind==BONUS_TURN);
             string cn="",cd="";
-            if(c.type==CARD){int idx=raw%(int)CARDS.size();
-                cn=CARDS[idx].name;cd=CARDS[idx].desc;sk=CARDS[idx].skip;ex=CARDS[idx].extra;}
-            int item_idx=item_at_cell(raw);
-            string item_nm=(item_idx>=0)?ITEMS[item_idx].name:"";
-            cout<<"RESULT|"<<ns.pos<<"|"<<ns.money<<"|"<<ns.die
-                <<"|"<<c.emoji<<" "<<c.name<<"|"<<c.desc
+            if(t.kind==EVENT){int idx=raw%(int)DECK.size();
+                cn=DECK[idx].label;cd=DECK[idx].hint;fr=DECK[idx].freeze;rp=DECK[idx].again;}
+            int li=loot_at(raw);
+            string ln=(li>=0)?LOOT[li].tag:"";
+            cout<<"RESULT|"<<ns.pos<<"|"<<ns.coins<<"|"<<ns.dice_tier
+                <<"|"<<t.icon<<" "<<t.label<<"|"<<t.hint
                 <<"|"<<cn<<"|"<<cd
-                <<"|"<<(sk?"1":"0")<<"|"<<(ex?"1":"0")
-                <<"|"<<item_nm<<"\n";
+                <<"|"<<(fr?"1":"0")<<"|"<<(rp?"1":"0")
+                <<"|"<<ln<<"\n";
         }
     }
     return 0;
