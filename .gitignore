@@ -1,0 +1,8 @@
+venv/
+__pycache__/
+*.pyc
+.streamlit/
+
+engine.exe
+picnic_engine.exe
+picnic_engine
